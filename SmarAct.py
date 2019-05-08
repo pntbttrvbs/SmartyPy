@@ -282,8 +282,8 @@ class SmarAct:
             See also:SA_FindSystems, SA_GetSystemLocator, SA_CloseSyste
         """
         c_systemIndex = c_uint32()
-        c_systemLocator = c_char_p(systemLocator)
-        c_options = c_char_p(options)
+        c_systemLocator = c_wchar_p(systemLocator)
+        c_options = c_wchar_p(options)
 
         ret = self.dll.SA_OpenSystem(byref(c_systemIndex), c_systemLocator, c_options)
         print('working I guess?')
@@ -649,7 +649,7 @@ class SmarAct:
     def GetStatusInfo(self, status):
 
         c_status = c_uint32(status)
-        c_info = c_char_p()
+        c_info = c_wchar_p()
 
         ret = self.dll.SA_GetStatusInfo(c_status, c_info)
         return (ret, c_info.value)
