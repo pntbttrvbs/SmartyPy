@@ -4,20 +4,18 @@ import platform
 
 class SmarAct:
     def __init__(self):
-        print(sys.platform)
         if sys.platform == 'linux2':
             dllname = '/usr/local/path/to/smaract'
             self.dll = cdll.LoadLibrary(dllname)
         elif sys.platform == 'win32':
             if platform.architecture()[0] == '64bit' :
-                dllname = 'C:\\Path\\To\\SmarAct'
+                dllname = 'C:\SmarAct\MCS\SDK\lib64\MCSControl.dll'
             else:
-                dllname = 'C:\\Path\\To\\SmarAct'
+                dllname = 'C:\SmarAct\MCS\SDK\lib\MCSControl.dll'
             self.dll = windll.LoadLibrary(dllname)
         else:
             print("Cannot detect OS.")
-            #pass
-            #raise
+            raise
 
 
     def AddSystemToInitSystemsList(self):
@@ -229,7 +227,6 @@ class SmarAct:
         pass
 
     def OpenSystem(self, systemLocator, options):
-        print('here')
         """
         Interface:
 
@@ -282,11 +279,12 @@ class SmarAct:
             See also:SA_FindSystems, SA_GetSystemLocator, SA_CloseSyste
         """
         c_systemIndex = c_uint32()
-        c_systemLocator = c_wchar_p(systemLocator)
+        systemLocator_bytes = systemLocator.encode()
+        c_systemLocator = c_char_p(systemLocator_bytes)
+        print(c_systemLocator)
         c_options = c_wchar_p(options)
 
         ret = self.dll.SA_OpenSystem(byref(c_systemIndex), c_systemLocator, c_options)
-        print('working I guess?')
         return (ret, c_systemIndex.value)
 
     def ReleaseSystems(self):
@@ -409,7 +407,7 @@ class SmarAct:
         c_channelIndex = c_uint32(channelIndex)
         c_direction = c_uint32()
 
-        ret = self.dll.GetSafeDirection_S(c_systemIndex, c_channelIndex, byref(c_direction))
+        ret = self.dll.SA_GetSafeDirection_S(c_systemIndex, c_channelIndex, byref(c_direction))
         return (ret, c_direction.value)
 
     def GetScale_S(self, systemIndex, channelIndex):
@@ -649,8 +647,7 @@ class SmarAct:
     def GetStatusInfo(self, status):
 
         c_status = c_uint32(status)
-        c_info = c_wchar_p()
-
+        c_info = create_string_buffer(50)
         ret = self.dll.SA_GetStatusInfo(c_status, c_info)
         return (ret, c_info.value)
 
