@@ -281,7 +281,6 @@ class SmarAct:
         c_systemIndex = c_uint32()
         systemLocator_bytes = systemLocator.encode()
         c_systemLocator = c_char_p(systemLocator_bytes)
-        print(c_systemLocator)
         c_options = c_wchar_p(options)
 
         ret = self.dll.SA_OpenSystem(byref(c_systemIndex), c_systemLocator, c_options)
