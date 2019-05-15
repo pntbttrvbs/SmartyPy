@@ -525,6 +525,42 @@ class SmarAct:
 
     def GetPhysicalPositionKnown_S(self, systemIndex, channelIndex):
 
+        """
+        Channel type: Positioner
+
+        Interface:
+        SA_STATUS SA_GetPhysicalPositionKnown_S(SA_INDEX systemIndex,
+                                                SA_INDEX channelIndex,
+                                                unsigned int *known);
+
+        Description:
+        Returns whether the positioner “knows” its physical position. After a power-up the physical position is unknown
+        and the current position is implicitly assumed to be the zero position. After the reference mark has been found
+        by calling SA_FindReferenceMark_S the physical position becomes known.
+
+        This function can be useful if the software application restarts and connects to a system that has stayed
+        online. If the physical position is already known, traveling to the reference mark again may be omitted.
+
+        See also 2.5.3 “Defining Positions“.
+
+        Parameters:
+            :param systemIndex: (unsigned 32bit), input - Handle to an initialized system.
+            :param channelIndex: (unsigned 32bit), input - Selects the channel of the selected system. The index is
+                zero based.
+            :param known: (unsigned 32bit), output - If the call was successful, this parameter will be either
+                SA_PHYSICAL_POSITION_UNKNOWN or SA_PHYSICAL_POSITION_KNOWN.
+
+            Example:
+            // check whether the physical position of channel 2 is known
+            unsigned int known;
+            result = SA_GetPhysicalPositionKnown_S(mcsHandle,2,&known);
+            if (result == SA_OK) {
+                // known holds the result
+            }
+
+            See also:SA_FindReferenceMark_S, SA_SetPosition_S, SA_SetScale_S
+        """
+
         c_systemIndex = c_uint32(systemIndex)
         c_channelIndex = c_uint32(channelIndex)
         c_known = c_uint32()
@@ -533,6 +569,44 @@ class SmarAct:
         return (ret, c_known)
 
     def GetPosition_S(self, systemIndex, channelIndex):
+
+        """
+        Channel type: Positioner
+
+        Interface:SA_STATUS SA_GetPosition_S(SA_INDEX systemIndex,
+                                             SA_INDEX channelIndex,
+                                             signed int *position);
+
+        Description:
+        Returns the current position of a positioner. This function is only executable by a positioner that has a sensor
+        attached to it. The sensor must also be enabled or in power save mode (see SA_SetSensorEnabled_S). If this is
+        not the case the channel will return an error. Additionally, the command is only executable if the addressed
+        channel is configured to be of type linear (see SA_SetSensorType_S). A rotary channel will return an error
+        (use SA_GetAngle_S instead).
+
+        Parameters:
+            :param systemIndex: (unsigned 32bit), input - Handle to an initialized system.
+            :param channelIndex: (unsigned 32bit), input - Selects the channel of the selected system. The index is
+                zero based.
+            :param position :(signed 32bit), output - If the call was successful this value holds the current position
+                of the positioner in nano meters.
+
+        Example:
+        unsigned int mcsHandle;
+        const char loc[] = “usb:id:3118167233”;
+        SA_STATUS result = SA_OpenSystem(&mcsHandle, loc, “sync”);
+        if (result != SA_OK) {
+            // handle error...
+        }
+        // get current position
+        signed int position;
+        result = SA_GetPosition_S(mcsHandle,0,&position);
+        if (result == SA_OK) {
+            // current position is in position variable
+        }
+
+        See also:SA_GetAngle_S
+        """
 
         c_systemIndex = c_uint32(systemIndex)
         c_channelIndex = c_uint32(channelIndex)
