@@ -3,6 +3,42 @@ import sys
 import platform
 
 class SmarAct:
+
+    FunctionStatusCodes = {
+        0: ('SA_OK', 'The function call was successful.'),
+        1: ('SA_INITIALIZATION_ERROR', 'An error occurred while initializing the library. All systems should be '
+                                       'disconnected and reset before the next attempt is made.'),
+        2: ('SA_NOT_INITIALIZED_ERROR', 'A function call has been made for an uninitialized system. Call SA_OpenSystem '
+                                        'before communicating with the hardware.'),
+        3: ('SA_NO_SYSTEMS_FOUND_ERROR', 'May occur at initialization if no Modular Control Systems have been detected '
+                                         'on the PC system. Check the connection of the USB cable and make sure the '
+                                         'drivers are installed properly. Note: After power-up / USB connection it may '
+                                         'take several seconds for the system to be detectable.'),
+                              4: ('SA_TOO_MANY_SYSTEMS_ERROR', 'The number of allowed systems connected to the PC is '
+                                                               'limited to 32. If you have more connected, '
+                                                               'disconnect some.'),
+                              5: ('SA_INVALID_SYSTEM_INDEX_ERROR', 'An invalid system index has been passed to a '
+                                                                   'function. The system index parameter of various '
+                                                                   'functions is zero based. If N is the number of '
+                                                                   'acquired systems, then the valid range for the '
+                                                                   'system index is 0..(N-1).'),
+        6: ('SA_INVALID_CHANNEL_INDEX_ERROR', 'An invalid channel index has been passed to a function. The channel '
+                                              'index parameter of various functions is zero based. If N is the number '
+                                              'of channels available on a system, then the valid range for the channel '
+                                              'index is 0..(N-1).'),
+        7: ('SA_TRANSMIT_ERROR', 'An error occurred while sending data to the hardware. The system should be reset.'),
+        8: ('SA_WRITE_ERROR', 'An error occurred while sending data to the hardware. The system should be reset.'),
+        9: ('SA_INVALID_PARAMETER_ERROR', 'An invalid parameter has been passed to a function. Check the function '
+                                          'documentation for valid ranges.'),
+        10: ('SA_READ_ERROR', 'An error occurred while receiving data from the hardware. The system should be reset.'),
+        12: ('SA_INTERNAL_ERROR', 'An internal communication error occurred.The system should be reset.'),
+        13: ('SA_WRONG_MODE_ERROR', 'The called function does not match the communication mode that was selected at '
+                                    'initialization (see2.2.2 – “Communication Modes“).In synchronous communication '
+                                    'mode only functions of sections I and IIa may be called.In asynchronous '
+                                    'communication mode only functions of sections I and IIb may be called.'),
+        14: ('SA_PROTOCOL_ERROR', 'An internal protocol error occurred.The system should be reset.')
+    }
+
     def __init__(self):
         if sys.platform == 'linux2':
             dllname = '/usr/local/path/to/smaract'
@@ -292,6 +328,12 @@ class SmarAct:
 
     def SetHCMEnabled(self, systemIndex, enabled):
 
+        """
+        Description:
+        This function may be used to enable or disable a Hand Control Module that is attached to the system to avoid
+        interference while the software is in control of the system.
+        """
+
         c_systemIndex = c_uint32(systemIndex)
         c_enabled = c_uint32(enabled)
 
@@ -303,12 +345,120 @@ class SmarAct:
 
     def CalibrateSensor_S(self, systemIndex, channelIndex):
 
+        """
+        Channel type: Positioner
+
+        Interface:
+        SA_STATUS SA_CalibrateSensor_S(SA_INDEX systemIndex,
+                                       SA_INDEX channelIndex);
+
+        Description:
+        This function may be used to increase the accuracy of the position calculation. It is only executable by a
+        positioner that has a sensor attached to it. The sensor must also be enabled or in power save mode (see
+        SA_SetSensorEnabled_S). If this is not the case the channel will return an error.
+
+        This function should be called once for each channel if the mechanical setup changes (different positioners
+        connected to different channels). The calibration data will be saved to non-volatile memory. If the mechanical
+        setup is unchanged, it is not necessary to call this function on each initialization, but newly connected
+        positioners have to be calibrated in order to ensure proper operation.
+
+        During the calibration the positioner will perform a movement of up to several mm. You must ensure, that the
+        command is not executed while the positioner is near a mechanical end stop. Otherwise the calibration mightfail
+        and lead to unexpected behavior when executing closed-loop commands. As a safety precaution, also make sure
+        that the positioner has enough freedom to move without damaging other equipment.
+
+        The calibration takes a few seconds to complete. During this time the positioner will report a status of
+        SA_CALIBRATING_STATUS (see SA_GetStatus_S).
+
+        Positioners that are referenced via a mechanical end stop (see 5.4 “Sensor Types“) are moved to the end stop as
+        part of the calibration routine. Which end stop is used for referencing is configured bySA_SetSafeDirection_S.
+        Note that when changing the safe direction the end stop must be calibrated again for proper operation.
+
+        Parameters:
+            systemIndex (unsigned 32bit), input - Handle to an initialized system.
+            channelIndex (unsigned 32bit), input - Selects the channel of the selected system. The index is zero based.
+
+        Example:
+            unsigned int mcsHandle;
+            const char loc[] = “usb:id:3118167233”;
+            SA_STATUS result = SA_OpenSystem(&mcsHandle, loc, “sync”);
+            if (result != SA_OK) {
+                // handle error...
+            }
+            // start calibration routine
+            result = SA_CalibrateSensor_S(mcsHandle,0);
+            unsigned int status;
+            do {
+                SA_GetStatus_S(mcsHandle,0,&status);
+            } while (status != SA_STOPPED_STATUS);
+            // done calibrating
+
+
+
+        """
+
         c_systemIndex = c_uint32(systemIndex)
         c_channelIndex = c_uint32(channelIndex)
 
         ret = self.dll.SA_CalibrateSensor_S(c_systemIndex, c_channelIndex)
 
     def FindReferenceMark_S(self, systemIndex, channelIndex, direction, holdTime, autoZero):
+
+        """
+        Channel type: Positioner
+
+        Interface:SA_STATUS SA_FindReferenceMark_S(SA_INDEX systemIndex,
+                                                   SA_INDEX channelIndex,
+                                                   unsigned int direction,
+                                                   unsigned int holdTime,
+                                                   unsigned int autoZero);
+
+        Description:
+        For positioners that are equipped with sensor feedback, this function may be used to move the positioner to a
+        known physical position of the positioner. Some sensor types are equipped with a physical reference mark,
+        others are referenced via a mechanical end stop (see appendix 5.4 “Sensor Types“). For latter types you must
+        configure the safe direction with SA_SetSafeDirection_S and call SA_CalibrateSensor_S before the positioner can
+        be properly referenced. The safe direction is then used instead of the direction parameter described below.
+
+        If the auto zero flag is set, the current position resp. angle is set to zero after the reference position has
+        been reached. Otherwise the position is set according to the information stored in non-volatile memory of the
+        last SA_SetPosition_S call. See section 2.5.3 “Defining Positions“ for more information.
+
+        As a safety precaution, make sure that the positioner has enough freedom to move without damaging other
+        equipment.
+
+        The positioner may be instructed to hold the position of the reference mark after it has been reached. This
+        behavior is similar to that of the other closed-loop commands, e.g. SA_GotoPositionAbsolute_S. See there for
+        more information.
+
+        While executing the command the positioner will have a movement status of SA_FINDING_REF_STATUS. While holding
+        the position the positioner will have a movement status of SA_HOLDING_STATUS (seeSA_GetStatus_S).
+
+        If this command was successful, then the physical position of the positioner becomes known.
+        See SA_GetPhysicalPositionKnown_S.
+
+        Parameters:
+            :param systemIndex: (unsigned 32bit), input - Handle to an initialized system.
+            :param channelIndex: (unsigned 32bit), input - Selects the channel of the system. The index is zero based.
+            :param direction: (unsigned 32bit), input - Specifies the initial search direction.
+                (See Table in 2.5.3 Defining Positions for valid values and explanations). Note that this parameter is
+                ignored for sensor types that are referenced via a mechanical end stop. Set the direction via
+                SA_SetSafeDirection_S instead.
+            :param holdTime: (unsigned 32bit), input - Specifies how long (in milliseconds) the position is actively
+                held after reaching the target. The valid range is 0..60,000. A 0 deactivates this feature, a value of
+                60,000 is infinite (until manually stopped, see SA_Stop_S).
+            :param autoZero: (unsigned 32bit), input - Must be one of SA_NO_AUTO_ZERO or SA_AUTO_ZERO. The latter will
+            reset the current position resp. angle to zero upon reaching the reference mark (see alsoSA_SetPosition_S)
+
+        Example:
+            // move to reference mark and set to zero
+            result = SA_FindReferenceMark_S(mcsHandle,0,SA_FORWARD_DIRECTION,0,SA_AUTO_ZERO);
+            unsigned int status;
+            do {
+                SA_GetStatus_S(mcsHandle,0,&status);
+            } while (status != SA_STOPPED_STATUS);
+
+        """
 
         c_systemIndex = c_uint32(systemIndex)
         c_channelIndex = c_uint32(channelIndex)
@@ -413,6 +563,36 @@ class SmarAct:
         pass
 
     def GetSensorEnabled_S(self, systemIndex):
+        """
+        Interface:
+        SA_STATUS SA_GetSensorEnabled_S(SA_INDEX systemIndex,
+                                        unsigned int *enabled);
+
+        Description:
+        This function may be used to read the sensor operation mode that is currently configured for the sensors that
+        are attached to the positioners of a system. The mode is system global and applies to all positioner channels
+        of a system equally.
+
+        Please refer to section 2.5.2 “Sensor Modes” for more information on the sensor modes.
+
+        Parameters:
+            :param systemIndex: (unsigned 32bit), input - Handle to an initialized system.
+            :param enabled: (unsigned 32bit), output - If the call was successful, this parameter holds the current
+            sensor mode (SA_SENSOR_DISABLED, SA_SENSOR_ENABLED or SA_SENSOR_POWERSAVE).
+
+        Example:
+            unsigned int mcsHandle;
+            const char loc[] = “usb:id:3118167233”;
+            SA_STATUS result = SA_OpenSystem(&mcsHandle, loc, “sync”);
+            if (result != SA_OK) {
+                // handle error...
+            }
+            // read sensor mode
+            unsigned int enabled;
+            result = SA_GetSensorEnabled_S(mcsHandle,&enabled);
+
+            See also:SA_SetSensorEnabled_
+        """
 
         c_systemIndex = c_uint32(systemIndex)
         c_enabled = c_uint32()
@@ -473,6 +653,51 @@ class SmarAct:
         return (ret)
 
     def GotoPositionRelative_S(self, systemIndex, channelIndex, diff, holdTime):
+
+        """
+        Channel type: Positioner
+
+        Interface:
+        SA_STATUS SA_GotoPositionRelative_S(SA_INDEX systemIndex,
+                                            SA_INDEX channelIndex,
+                                            signed int diff,
+                                            unsigned int holdTime);
+
+        Description:
+        Instructs a positioner to move to a position relative to its current position. This function is only executable
+        by a positioner that has a sensor attached to it. The sensor must also be enabled or in power save mode
+        (seeSA_SetSensorEnabled_S). If this is not the case the channel will return an error. Additionally, the command
+        is only executable if the addressed channel is configured to be of type linear (seeSA_SetSensorType_S). A rotary
+         channel will return an error (use SA_GotoAngleRelative_S instead).
+
+        If a relative positioning command is issued before a previous one has finished, normally the relative targets
+        are accumulated. If this is not desired it can be disabled with SA_SetAccumulateRelativePositions_S(see there
+        for more information).
+
+        The positioner may be instructed to hold the target position after it has been reached. See
+        SA_GotoPositionAbsolute_S for more information.
+
+        While executing the command the positioner will have a movement status of SA_TARGET_STATUS. While holding the
+        target position the positioner will have a movement status of SA_HOLDING_STATUS (seeSA_GetStatus_S).
+
+        If a mechanical end stop is detected while the command is in execution, the movement will be aborted. Note that
+        in asynchronous communication mode an error will be reported.
+
+        Parameters:
+        :param systemIndex: (unsigned 32bit), input - Handle to an initialized system.
+        :param channelIndex: (unsigned 32bit), input - Selects the channel of the selected system. The index is zero
+            based.
+        :param position: (signed 32bit), input - Relative position to move to in nano meters.
+        :param holdTime: (unsigned 32bit), input - Specifies how long (in milliseconds) the position is actively held
+        after reaching the target. The valid range is 0..60,000. A 0 deactivates this feature, a value of 60,000 is
+        infinite (until manually stopped, see SA_Stop_S).
+
+        Example:
+            // move 2 micro meters in negative direction
+            result = SA_GotoPositionRelative_S(mcsHandle,0,-2000,0);
+
+        See also:SA_GotoPositionAbsolute_S, SA_GotoAngleRelative_S, SA_GetPosition_S
+        """
 
         c_systemIndex = c_uint32(systemIndex)
         c_channelIndex = c_uint32(channelIndex)
@@ -585,6 +810,38 @@ class SmarAct:
         pass
 
     def SetSensorEnabled_S(self, systemIndex, enabled):
+
+        """
+        Interface:
+            SA_STATUS SA_SetSensorEnabled_S(SA_INDEX systemIndex,
+                                            unsigned int enabled);
+
+        Description:
+        This function may be used to activate or deactivate the sensors that are attached to the positioners of a
+        system. The command is system global and affects all positioner channels of a system equally. It effectively
+        turns the power supply of the sensors on or off. Please refer to section 2.5.2 “Sensor Modes” for more
+        information on the sensor modes. End effector channels are not affected by this function.
+
+        If this command is issued, all positioner channels of the system are implicitly stopped.
+
+        This setting is stored to non-volatile memory immediately and need not be configured on every power-up.
+
+        Parameters:
+            :param systemIndex: (unsigned 32bit), input - Handle to an initialized system.
+            :param enabled: (unsigned 32bit), input - Sets the mode. Must be either SA_SENSOR_DISABLED,
+                SA_SENSOR_ENABLED or SA_SENSOR_POWERSAVE.
+        Example:
+            unsigned int mcsHandle;
+            const char loc[] = “usb:id:3118167233”;
+            SA_STATUS result = SA_OpenSystem(&mcsHandle, loc, “sync”);
+            if (result != SA_OK) {
+                // handle error...
+            }
+            // disable sensors
+            result = SA_SetSensorEnabled_S(mcsHandle,SA_SENSOR_DISABLED);
+
+        See also:SA_GetSensorEnabled_S
+        """
 
         c_systemIndex = c_uint32(systemIndex)
         c_enabled = c_uint32(enabled)

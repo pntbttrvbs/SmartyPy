@@ -16,7 +16,11 @@ class movementTests(unittest.TestCase):
 
     def testInitConnection(self):
         input("Connect ethernet to leftmost controller and press enter")
-        
+        result, self.controllerHandle = self.SA.OpenSystem(self.focusStage_IP, 'sync')
+        self.assertEqual(result, 0)
+
+
+
     def tearDown(self):
         pass
         #self.SA.CloseSystem()
