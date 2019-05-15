@@ -239,7 +239,7 @@ class SmarAct:
         c_channels = c_uint32()
 
         ret = self.dll.SA_GetNumberOfChannels(c_systemIndex, byref(c_channels))
-        return(ret, c_channels)
+        return(ret, c_channels.value)
 
     def GetNumberOfSystems(self):
         #depricated
@@ -401,6 +401,7 @@ class SmarAct:
         c_channelIndex = c_uint32(channelIndex)
 
         ret = self.dll.SA_CalibrateSensor_S(c_systemIndex, c_channelIndex)
+        return (ret)
 
     def FindReferenceMark_S(self, systemIndex, channelIndex, direction, holdTime, autoZero):
 
