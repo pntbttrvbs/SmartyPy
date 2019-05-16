@@ -14,10 +14,9 @@ class SmarAct:
                                          'on the PC system. Check the connection of the USB cable and make sure the '
                                          'drivers are installed properly. Note: After power-up / USB connection it may '
                                          'take several seconds for the system to be detectable.'),
-                              4: ('SA_TOO_MANY_SYSTEMS_ERROR', 'The number of allowed systems connected to the PC is '
-                                                               'limited to 32. If you have more connected, '
-                                                               'disconnect some.'),
-                              5: ('SA_INVALID_SYSTEM_INDEX_ERROR', 'An invalid system index has been passed to a '
+        4: ('SA_TOO_MANY_SYSTEMS_ERROR', 'The number of allowed systems connected to the PC is limited to 32. If you '
+                                         'have more connected, disconnect some.'),
+        5: ('SA_INVALID_SYSTEM_INDEX_ERROR', 'An invalid system index has been passed to a '
                                                                    'function. The system index parameter of various '
                                                                    'functions is zero based. If N is the number of '
                                                                    'acquired systems, then the valid range for the '
@@ -566,7 +565,7 @@ class SmarAct:
         c_known = c_uint32()
 
         ret = self.dll.SA_GetPhysicalPositionKnown_S(c_systemIndex, c_channelIndex, byref(c_known))
-        return (ret, c_known)
+        return (ret, c_known.value)
 
     def GetPosition_S(self, systemIndex, channelIndex):
 
@@ -613,7 +612,7 @@ class SmarAct:
         c_position = c_uint32()
 
         ret = self.dll.SA_GetPhysicalPositionKnown_S(c_systemIndex, c_channelIndex, byref(c_position))
-        return (ret, c_position)
+        return (ret, c_position.value)
 
     def GetPositionLimit_S(self, systemIndex, channelIndex):
 

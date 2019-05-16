@@ -5,37 +5,38 @@ class movementTests(unittest.TestCase):
 
     def setUp(self):
         print('/n Setting up next test.../n')
-        self.sampleStage_IP = '192.168.1.201'
-        self.focusStage_IP = '192.168.1.200'
+        self.sampleStage_IP = 'network:192.168.1.201:5000'
+        self.focusStage_IP = 'network:192.168.1.200:5000'
         self.port = 5000
         self.SA = SmarAct.SmarAct()
         print(self.SA.GetDLLVersion())
         result, self.controllerHandle = self.SA.OpenSystem(self.focusStage_IP, 'sync')
+        print(result)
         if result == 0:
             print('Controller connected.')
         result, c = self.SA.GetNumberOfChannels(self.controllerHandle)
         print('Controller has ' + str(c) + ' channels.')
         self.numChannels = c
 
-    def testPositionKnown(self):
+    def PositionKnown(self):
         print('Does the controller know its position?')
         for i in range(self.numChannels):
             print('Axis: ' + str(i))
-            result, posKnown = self.SA.GetPhysicalPositionKnown_S()
+            result, posKnown = self.SA.GetPhysicalPositionKnown_S(self.controllerHandle, i)
             self.assertEqual(result,0)
             print('Status ' + str(result) + ', and position known status is: ' + str(posKnown))
             self.getSafeDir(i)
 
     def testCalibrateEffects(self):
         print('Test effect of cal on position known')
-        self.testPositionKnown()
+        self.PositionKnown()
         for i in range(self.numChannels):
             result = self.SA.CalibrateSensor_S(self.controllerHandle, i)
             self.assertEqual(result, 0)
             print('Channel ' + str(i) + ' calibrated.')
             ret = self.SA.FindReferenceMark_S(self.controllerHandle, i, 0, 0, 0)
             print('Went to reference with status ' + str(ret))
-        self.testPositionKnown()
+        self.PositionKnown()
 
     def testSensorPowercycle(self):
         print('Testing the effect of sensor power cycle on position known')
@@ -44,7 +45,10 @@ class movementTests(unittest.TestCase):
         result = self.SA.SetSensorEnabled_S(self.controllerHandle,0)
         print('Sensors turned off with result ' + str(result))
         self.sensorStatus()
-        self.testPositionKnown()
+        self.PositionKnown()
+        result = self.SA.SetSensorEnabled_S(self.controllerHandle, 1)
+        print('Sensors turned on with result ' + str(result))
+        self.PositionKnown()
 
     def testRefAutoZero(self):
         print('tests for AutoZero option of find ref point')
