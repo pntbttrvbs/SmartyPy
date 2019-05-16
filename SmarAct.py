@@ -447,8 +447,9 @@ class SmarAct:
             :param holdTime: (unsigned 32bit), input - Specifies how long (in milliseconds) the position is actively
                 held after reaching the target. The valid range is 0..60,000. A 0 deactivates this feature, a value of
                 60,000 is infinite (until manually stopped, see SA_Stop_S).
-            :param autoZero: (unsigned 32bit), input - Must be one of SA_NO_AUTO_ZERO or SA_AUTO_ZERO. The latter will
-            reset the current position resp. angle to zero upon reaching the reference mark (see alsoSA_SetPosition_S)
+            :param autoZero: (unsigned 32bit), input - Must be one of SA_NO_AUTO_ZERO (0) or SA_AUTO_ZERO (1). The
+                latter will reset the current position resp. angle to zero upon reaching the reference mark (see also
+                SA_SetPosition_S)
 
         Example:
             // move to reference mark and set to zero
@@ -479,7 +480,7 @@ class SmarAct:
         ret = self.dll.SA_GetAngle_S(c_systemIndex,c_channelIndex,byref(c_angle),byref(c_revolution))
         return (ret,c_angle.value,c_revolution.value)
 
-    def GenAngleLimit_S(self):
+    def GetAngleLimit_S(self):
         pass
 
     def GetCaptureBuffer_S(self, systemIndex,channelIndex,bufferIndex):
@@ -546,8 +547,8 @@ class SmarAct:
             :param systemIndex: (unsigned 32bit), input - Handle to an initialized system.
             :param channelIndex: (unsigned 32bit), input - Selects the channel of the selected system. The index is
                 zero based.
-            :param known: (unsigned 32bit), output - If the call was successful, this parameter will be either
-                SA_PHYSICAL_POSITION_UNKNOWN or SA_PHYSICAL_POSITION_KNOWN.
+            :return known: (unsigned 32bit), output - If the call was successful, this parameter will be either
+                SA_PHYSICAL_POSITION_UNKNOWN (0) or SA_PHYSICAL_POSITION_KNOWN (1).
 
             Example:
             // check whether the physical position of channel 2 is known
@@ -587,7 +588,7 @@ class SmarAct:
             :param systemIndex: (unsigned 32bit), input - Handle to an initialized system.
             :param channelIndex: (unsigned 32bit), input - Selects the channel of the selected system. The index is
                 zero based.
-            :param position :(signed 32bit), output - If the call was successful this value holds the current position
+            :return position :(signed 32bit), output - If the call was successful this value holds the current position
                 of the positioner in nano meters.
 
         Example:
@@ -609,9 +610,9 @@ class SmarAct:
 
         c_systemIndex = c_uint32(systemIndex)
         c_channelIndex = c_uint32(channelIndex)
-        c_position = c_uint32()
+        c_position = c_int32()
 
-        ret = self.dll.SA_GetPhysicalPositionKnown_S(c_systemIndex, c_channelIndex, byref(c_position))
+        ret = self.dll.SA_GetPosition_S(c_systemIndex, c_channelIndex, byref(c_position))
         return (ret, c_position.value)
 
     def GetPositionLimit_S(self, systemIndex, channelIndex):
@@ -651,8 +652,8 @@ class SmarAct:
 
         Parameters:
             :param systemIndex: (unsigned 32bit), input - Handle to an initialized system.
-            :param enabled: (unsigned 32bit), output - If the call was successful, this parameter holds the current
-            sensor mode (SA_SENSOR_DISABLED, SA_SENSOR_ENABLED or SA_SENSOR_POWERSAVE).
+            :returns enabled: (unsigned 32bit), output - If the call was successful, this parameter holds the current
+            sensor mode (SA_SENSOR_DISABLED (0), SA_SENSOR_ENABLED(1) or SA_SENSOR_POWERSAVE(2)).
 
         Example:
             unsigned int mcsHandle;
@@ -778,7 +779,7 @@ class SmarAct:
         c_diff = c_int32(diff)
         c_holdTime = c_uint32(holdTime)
 
-        ret = self.dll.SA_GotoPositionAbsolute_S(c_systemIndex, c_channelIndex, c_diff, c_holdTime)
+        ret = self.dll.SA_GotoPositionRelative_S(c_systemIndex, c_channelIndex, c_diff, c_holdTime)
         return (ret)
 
     def ScanMoveAbsolute_S(self, systemIndex, channelIndex, target, scanSpeed):
@@ -788,7 +789,7 @@ class SmarAct:
         c_target = c_uint32(target)
         c_scanSpeed = c_uint32(scanSpeed)
 
-        ret = self.dll.SA_GotoPositionAbsolute_S(c_systemIndex, c_channelIndex, c_target, c_scanSpeed)
+        ret = self.dll.SA_ScanMoveAbsolute_S(c_systemIndex, c_channelIndex, c_target, c_scanSpeed)
         return (ret)
 
     def ScanMoveRelative_S(self, systemIndex, channelIndex, diff, scanSpeed):
@@ -798,7 +799,7 @@ class SmarAct:
         c_diff = c_uint32(diff)
         c_scanSpeed = c_uint32(scanSpeed)
 
-        ret = self.dll.SA_GotoPositionAbsolute_S(c_systemIndex, c_channelIndex, c_diff, c_scanSpeed)
+        ret = self.dll.SA_ScanMoveRelative_S(c_systemIndex, c_channelIndex, c_diff, c_scanSpeed)
         return (ret)
 
     def SetAccumulateRelativePositions_S(self, systemIndex, channelIndex, accumulate):
@@ -902,8 +903,8 @@ class SmarAct:
 
         Parameters:
             :param systemIndex: (unsigned 32bit), input - Handle to an initialized system.
-            :param enabled: (unsigned 32bit), input - Sets the mode. Must be either SA_SENSOR_DISABLED,
-                SA_SENSOR_ENABLED or SA_SENSOR_POWERSAVE.
+            :param enabled: (unsigned 32bit), input - Sets the mode. Must be either SA_SENSOR_DISABLED (0),
+                SA_SENSOR_ENABLED (1) or SA_SENSOR_POWERSAVE (2).
         Example:
             unsigned int mcsHandle;
             const char loc[] = “usb:id:3118167233”;
