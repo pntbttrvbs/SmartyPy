@@ -35,9 +35,46 @@ class SmarAct:
                                     'initialization (see2.2.2 – “Communication Modes“).In synchronous communication '
                                     'mode only functions of sections I and IIa may be called.In asynchronous '
                                     'communication mode only functions of sections I and IIb may be called.'),
-        14: ('SA_PROTOCOL_ERROR', 'An internal protocol error occurred.The system should be reset.')
+        14: ('SA_PROTOCOL_ERROR', 'An internal protocol error occurred.The system should be reset.'),
+        15: ('SA_TIMEOUT_ERROR', 'The hardware did not respond. Make sure that all cables are connected properly and '
+                                 'reset the system.'),
+        17: ('SA_ID_LIST_TOO_SMALL_ERROR', 'When calling SA_GetAvailableSystems you must pass a pointer to an array that'
+                                           ' is large enough to hold the system IDs of all connected systems. If the '
+                                           'number of detected systems is larger than the array, this error will be '
+                                           'generated.'),
+        18: ('SA_SYSTEM_ALREADY_ADDED_ERROR', 'In order to acquire specific systems you must call '
+                                              'SA_AddSystemToInitSystemsList before calling SA_InitSystems. A system ID'
+                                              'may only be added once to the list of systems to be acquired. Multiple '
+                                              'calls with the same ID lead to this error.'),
+        19: ('SA_WRONG_CHANNEL_TYPE_ERROR', 'Most functions of section II are only callable for certain channel types.'
+                                            'For example, calling SA_StepMove_S for a channel that is an end effector '
+                                            'channel will lead to this error.The detailed function description notes '
+                                            'the types of channels that the function may be called for.'),
+        20: ('SA_CANCELED_ERROR', 'The functions SA_ReceiveNextPacket_A and SA_LookAtNextPacket_A return this code if '
+                                  'they were blocking while waiting for an incoming packet and then were manually '
+                                  'unblocked by calling SA_CancelWaitForPacket_A.'),
+        21: ('SA_INVALID_SYSTEM_LOCATOR_ERROR', 'Returned by SA_OpenSystem if the locator string does not comply with '
+                                                'the supported locator formats.'),
+        22: ('SA_INPUT_BUFFER_OVERFLOW_ERROR', 'This error occurs when the input buffer for storing packets that have '
+                                               'been received from a system is full. To avoid this error remove packets '
+                                               'from the input buffer frequently with SA_ReceiveNextPacket_A.'),
+        23: ('SA_QUERYBUFFER_SIZE_ERROR', 'Returned by functions that write data in a binary or char buffer(e.g. '
+                                          'SA_FindSystem) if the user - supplied buffer is too small to hold the '
+                                          'returned data.'),
+        24: ('SA_DRIVER_ERROR', 'Returned by functions, if a driver, that is required to communicate to a controller '
+                                'over a certain hardware interface, is not available.'),
+        128: ('SA_NO_SUCH_SLAVE_ERROR','An internal communication error occurred.The system should be reset.'),
+        129: ('SA_NO_SENSOR_PRESENT_ERROR', 'This error occurs if a function was called that requires sensor feedback, '
+                                            'but the addressed positioner has none attached.'),
+        130: ('SA_AMPLITUDE_TOO_LOW_ERROR', 'The amplitude parameter that was given is too low.'),
+        131: ('SA_AMPLITUDE_TOO_HIGH_ERROR', 'The amplitude parameter that was given is too high.'),
+        132: ('SA_FREQUENCY_TOO_LOW_ERROR', 'The frequency parameter that was given is too low.'),
+        133: ('SA_FREQUENCY_TOO_HIGH_ERROR', 'The frequency parameter that was given is too high.'),
+        135: ('SA_SCAN_TARGET_TOO_HIGH_ERROR', 'The target position for a scanning movement that was given is too high.'),
+        136: ('SA_SCAN_SPEED_TOO_LOW_ERROR', 'The scan speed parameter that was given for a scan movement command is too low.'),
+        137: ('SA_SCAN_SPEED_TOO_HIGH_ERROR', 'The scan speed parameter that was given for a scan movement command is too high.'),
+        140: ('SA_SENSOR_DISABLED_ERROR', 'This error occurs if an addressed positioner has a sensor attached, but is disabled. See SA_SetSensorEnabled_S.')
     }
-
     def __init__(self):
         if sys.platform == 'linux2':
             dllname = '/usr/local/path/to/smaract'
@@ -74,7 +111,7 @@ class SmarAct:
 
         Parameters:
 
-        systemIndex (SA_INDEX), input – A handle to the system which will be closed.
+        :param systemIndex (SA_INDEX):, input – A handle to the system which will be closed.
 
         Example:
 
@@ -117,10 +154,10 @@ class SmarAct:
         generated list, the buffer will contain no valid content but ioBufferSize contains the required buffer size.
 
         Parameters:
-            options (const char), input – Options for the find procedure. Currently unused.
+            :param options: (const char), input – Options for the find procedure. Currently unused.
             outBuffer (char), output – Pointer to a buffer which holds the device locators after the function has
-            returned
-            ioBufferSize (unsigned int), input/output – Specifies  the size of outBuffer before the function call.
+                returned
+            :param ioBufferSize: (unsigned int), input/output – Specifies  the size of outBuffer before the function call.
             After the function call it holds the number of bytes written to outBuffer.
 
         Example:
@@ -167,11 +204,11 @@ class SmarAct:
         types they may be called.
 
         Parameters:
-            systemIndex (unsigned 32bit), input -  Handle to an initialized system.
-            channelIndex (unsigned 32bit), input - Selects the channel of the selected system. The index is zero based.
-            type (unsigned 32bit), output - If the call was successful this parameter holds the channel type of the
+            :param systemIndex: (unsigned 32bit), input -  Handle to an initialized system.
+            :param channelIndex: (unsigned 32bit), input - Selects the channel of the selected system. The index is zero based.
+            :return type: (unsigned 32bit), output - If the call was successful this parameter holds the channel type of the
             selected channel. Possible values are SA_POSITIONER_CHANNEL_TYPE and SA_END_EFFECTOR_CHANNEL_TYPE.
-        #TODO: check on those two value possibilities.
+
 
         Example:
 
@@ -288,9 +325,9 @@ class SmarAct:
 
         Parameters:
 
-            systemIndex (SA_INDEX), output – returns a handle to the opened system.
-            systemLocator (const char pointer), input – locator string that specifies the system.
-            options (const char pointer), input – options for the initialization function. See list above.
+            :return systemIndex: (SA_INDEX), output – returns a handle to the opened system.
+            :param systemLocator: (const char pointer), input – locator string that specifies the system.
+            :param options: (const char pointer), input – options for the initialization function. See list above.
 
         Example:
 
@@ -374,8 +411,8 @@ class SmarAct:
         Note that when changing the safe direction the end stop must be calibrated again for proper operation.
 
         Parameters:
-            systemIndex (unsigned 32bit), input - Handle to an initialized system.
-            channelIndex (unsigned 32bit), input - Selects the channel of the selected system. The index is zero based.
+            :param systemIndex: (unsigned 32bit), input - Handle to an initialized system.
+            :param channelIndex: (unsigned 32bit), input - Selects the channel of the selected system. The index is zero based.
 
         Example:
             unsigned int mcsHandle;
@@ -511,7 +548,7 @@ class SmarAct:
         c_channelIndex = c_uint32(channelIndex)
         c_speed = c_uint32()
 
-        ret = self.dll.SA_GetClosedLoopMoveAcceleration_S(c_systemIndex, c_channelIndex, byref(c_speed))
+        ret = self.dll.SA_GetClosedLoopMoveSpeed_S(c_systemIndex, c_channelIndex, byref(c_speed))
         return (ret, c_speed)
 
     def GetEndEffectorType_S(self):
@@ -635,6 +672,15 @@ class SmarAct:
         return (ret, c_direction.value)
 
     def GetScale_S(self, systemIndex, channelIndex):
+
+        c_systemIndex = c_uint32(systemIndex)
+        c_channelIndex = c_uint32(channelIndex)
+        c_scale = c_int32()
+        c_inverted = c_uint32()
+
+        ret = self.dll.SA_GetScale_S(c_systemIndex, c_channelIndex, byref(c_scale), byref(c_inverted))
+        return (ret, c_scale.value, c_inverted.value)
+
         pass
 
     def GetSensorEnabled_S(self, systemIndex):
@@ -820,7 +866,7 @@ class SmarAct:
         c_key = c_uint32(key)
         c_value = c_int32(value)
 
-        ret = self.dll.SA_GetChannelProperty_S(c_systemIndex, c_channelIndex, c_key, c_value)
+        ret = self.dll.SA_SetChannelProperty_S(c_systemIndex, c_channelIndex, c_key, c_value)
         return (ret)
 
     def SetClosedLoopMaxFrequency_S(self, systemIndex, channelIndex, frequency):
@@ -838,7 +884,7 @@ class SmarAct:
         c_channelIndex = c_uint32(channelIndex)
         c_acceleration = c_uint32(acceleration)
 
-        ret = self.dll.SA_SetClosedLoopMaxFrequency_S(c_systemIndex, c_channelIndex, c_acceleration)
+        ret = self.dll.SA_SetClosedLoopMoveAcceleration_S(c_systemIndex, c_channelIndex, c_acceleration)
         return(ret)
 
     def SetClosedLoopMoveSpeed_S(self, systemIndex, channelIndex, speed):
@@ -847,7 +893,7 @@ class SmarAct:
         c_channelIndex = c_uint32(channelIndex)
         c_speed = c_uint32(speed)
 
-        ret = self.dll.SA_SetClosedLoopMaxFrequency_S(c_systemIndex, c_channelIndex, c_speed)
+        ret = self.dll.SA_SetClosedLoopMoveSpeed_S(c_systemIndex, c_channelIndex, c_speed)
         return (ret)
 
     def SetEndEffectorType_S(self):
@@ -859,7 +905,7 @@ class SmarAct:
         c_channelIndex = c_uint32(channelIndex)
         c_position = c_int32(position)
 
-        ret = self.dll.SA_SetClosedLoopMaxFrequency_S(c_systemIndex, c_channelIndex, c_position)
+        ret = self.dll.SA_SetPosition_S(c_systemIndex, c_channelIndex, c_position)
         return (ret)
 
     def SetPositionLimit_S(self, systemIndex, channelIndex, minPosition, maxPosition):
@@ -869,7 +915,7 @@ class SmarAct:
         c_minPosition = c_int32(minPosition)
         c_maxPosition = c_int32(maxPosition)
 
-        ret = self.dll.SA_SetClosedLoopMaxFrequency_S(c_systemIndex, c_channelIndex, c_minPosition, c_maxPosition)
+        ret = self.dll.SA_SetPositionLimit_S(c_systemIndex, c_channelIndex, c_minPosition, c_maxPosition)
         return (ret)
 
     def SetSafeDirection_S(self, systemIndex, channelIndex, direction):
@@ -878,11 +924,18 @@ class SmarAct:
         c_channelIndex = c_uint32(channelIndex)
         c_direction = c_uint32(direction)
 
-        ret = self.dll.GetSafeDirection_S(c_systemIndex, c_channelIndex, c_direction)
+        ret = self.dll.SA_SetSafeDirection_S(c_systemIndex, c_channelIndex, c_direction)
         return (ret)
 
-    def SetScale_S(self):
-        pass
+    def SetScale_S(self, systemIndex, channelIndex, scale, inverted):
+
+        c_systemIndex = c_uint32(systemIndex)
+        c_channelIndex = c_uint32(channelIndex)
+        c_scale = c_int32(scale)
+        c_inverted = c_uint32(inverted)
+
+        ret = self.dll.SA_SetScale_S(c_systemIndex, c_channelIndex, c_scale, c_inverted)
+        return (ret)
 
     def SetSensorEnabled_S(self, systemIndex, enabled):
 
@@ -941,7 +994,7 @@ class SmarAct:
         c_frequency = c_uint32()
         c_amplitude = c_uint32()
 
-        ret = self.dll.SA_GetSafeDirection_S(c_systemIndex, c_channelIndex, c_steps, c_frequency, c_amplitude)
+        ret = self.dll.SA_StepMove_S(c_systemIndex, c_channelIndex, c_steps, c_frequency, c_amplitude)
         return (ret)
 
     def Stop_S(self, systemIndex, channelIndex):

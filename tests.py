@@ -53,7 +53,7 @@ class movementTests(unittest.TestCase):
     def testRefAutoZero(self):
         print('tests for AutoZero option of find ref point')
         for i in range(self.numChannels):
-            ret = self.SA.GotoPositionRelative_S(self.controllerHandle, i, 5, 0)
+            ret = self.SA.GotoPositionRelative_S(self.controllerHandle, i, 5000000, 0)
             pos = self.SA.GetPosition_S(self.controllerHandle, i)
             print("axis channel " + str(i) + 'has moved to pos ' + str(pos) + ' with error code ' + str(ret))
             ret = self.SA.SetPosition_S(self.controllerHandle, i, 400000000000000)
