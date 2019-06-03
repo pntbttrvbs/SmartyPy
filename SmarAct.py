@@ -654,6 +654,25 @@ class SmarAct:
 
     def GetPositionLimit_S(self, systemIndex, channelIndex):
 
+        """
+        Description:
+        Inverse function to SA_SetPositionLimit_S. May be used to read out the travel range limit that is currently
+        configured for a linear channel.
+
+        Parameters:
+            :param systemIndex: (unsigned 32bit), input - Handle to an initialized system.
+            :param channelIndex: (unsigned 32bit), input - Selects the channel of the selected system. The index is
+                zero based.
+            :return minPosition: (signed 32bit), output - If the call was successful, this parameter holds the absolute
+                minimum position given in nanometers.
+            :return maxPosition: (signed 32bit), output - If the call was successful, this parameter holds the absolute
+                maximum position given in nanometers.
+        Note: If no limit is set then both minPosition and maxPosition will be 0.
+
+
+        """
+
+
         c_systemIndex = c_uint32(systemIndex)
         c_channelIndex = c_uint32(channelIndex)
         c_minPosition = c_uint32()
