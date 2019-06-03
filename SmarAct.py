@@ -782,7 +782,51 @@ class SmarAct:
     def GotoGripperOpeningRelative_S(self):
         pass
 
-    def GotoPositionAbsolute_S(self, systemIndex, channelIndex, position, holdTime):
+    def GotoPositionAbsolute_S(self, systemIndex, channelIndex, position, holdTime = 0):
+
+        """
+        Channel type: Positioner
+
+        Interface:
+        SA_STATUS SA_GotoPositionAbsolute_S(SA_INDEX systemIndex,
+                                            SA_INDEX channelIndex,
+                                            signed int position,
+                                            unsigned int holdTime);
+
+        Description:
+        Instructs a positioner to move to a specific position. This function is only executable by a positioner that has
+        a sensor attached to it. The sensor must also be enabled or in power save mode (seeSA_SetSensorEnabled_S). If
+        this is not the case an error will be returned. Additionally, the command is only executable if the addressed
+        channel is configured to be of type linear (see SA_SetSensorType_S). A rotary channel will return an error (use
+        SA_GotoAngleAbsolute_S instead).
+
+        The positioner may be instructed to hold the target position after it has been reached. This may be useful to
+        compensate for drift effects and the like. Note that the positioner will use the scan mode to hold the position
+        if needed. When the piezo element of the positioner reaches a scanning boundary a single step is performed.
+        However, if this behavior is not desired the correction steps can be disabled with the SA_SetStepWhileScan_S
+        command (see there). Note though that disabling the steps might mean that the position cannot be held.
+
+        While executing the command the positioner will have a movement status of SA_TARGET_STATUS. While holding the
+        target position the positioner will have a movement status of SA_HOLDING_STATUS (seeSA_GetStatus_S).
+
+        If a mechanical end stop is detected while the command is in execution, the movement will be aborted. Note that
+        in asynchronous communication mode an error will be reported.
+
+        Parameters:
+            :param systemIndex: (unsigned 32bit), input - Handle to system.
+            :param channelIndex: (unsigned 32bit), input - Selects the channel of the selected system.
+                The index is zero.
+            :param position: (signed 32bit), input - Absolute position to move to in nano meters.
+            :param holdTime: (unsigned 32bit), input - Specifies how long (in milliseconds) the position is actively
+                held after reaching the target. The valid range is 0..60,000. A 0 deactivates this feature, a value of
+                60,000 is infinite (until manually stopped, see SA_Stop_S).
+
+        Example:
+        // move to zero position
+        result = SA_GotoPositionAbsolute_S(mcsHandle,0,0,0);
+
+        See also:SA_GotoPositionRelative_S, SA_GotoAngleAbsolute_S, SA_GetPosition_S
+        """
 
         c_systemIndex = c_uint32(systemIndex)
         c_channelIndex = c_uint32(channelIndex)
@@ -792,7 +836,7 @@ class SmarAct:
         ret = self.dll.SA_GotoPositionAbsolute_S(c_systemIndex, c_channelIndex, c_position, c_holdTime)
         return (ret)
 
-    def GotoPositionRelative_S(self, systemIndex, channelIndex, diff, holdTime):
+    def GotoPositionRelative_S(self, systemIndex, channelIndex, diff, holdTime = 0):
 
         """
         Channel type: Positioner
