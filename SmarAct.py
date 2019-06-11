@@ -2,7 +2,7 @@ from ctypes import *
 import sys
 import platform
 
-class SmarAct:
+class SmarAct():
 
     FunctionStatusCodes = {
         0: ('SA_OK', 'The function call was successful.'),
